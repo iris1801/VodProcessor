@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch VOD Processor</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .container { width: 50%; margin: auto; padding: 20px; }
+        .progress-bar { width: 100%; height: 30px; background: #ddd; position: relative; }
+        .progress { height: 100%; background: #4caf50; width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Twitch VOD Processor</h1>
+        <p>Stato: <span id="status">In attesa</span></p>
+        <p>Attuale: <span id="current_task">Nessun processo</span></p>
+        <p>Tempo Trascorso: <span id="elapsed_time">0s</span></p>
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        <p>Utilizzo CPU: <span id="cpu">0%</span></p>
+        <p>Utilizzo RAM: <span id="ram">0%</span></p>
+        <p>Utilizzo Disco: <span id="disk">0%</span></p>
+        <button onclick="start()">Start</button>
+        <button onclick="pause()">Pausa</button>
+        <button onclick="stop()">Stop</button>
+    </div>
+
+    <script>
+        var socket = io();
+        socket.on("update_progress", function(data) {
+            $("#progress").css("width", data.progress + "%");
+        });
+
+        function updateStatus() {
+            $.get("/status", function(data) {
+                $("#status").text(data.processing ? (data.paused ? "In Pausa" : "In Elaborazione") : "Fermo");
+                $("#current_task").text(data.current_task);
+                $("#elapsed_time").text(data.elapsed_time + "s");
+                $("#cpu").text(data.cpu + "%");
+                $("#ram").text(data.ram + "%");
+                $("#disk").text(data.disk + "%");
+            });
+        }
+
+        function start() { $.post("/start"); updateStatus(); }
+        function pause() { $.post("/pause"); updateStatus(); }
+        function stop() { $.post("/stop"); updateStatus(); }
+
+        setInterval(updateStatus, 2000);
+    </script>
+</body>
+</html>
